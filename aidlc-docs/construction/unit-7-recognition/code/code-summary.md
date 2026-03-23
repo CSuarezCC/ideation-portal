@@ -6,11 +6,11 @@
 |---|---|---|
 | `backend/src/shared/types/index.ts` | Modified | Added WinnerRecord, WinnerAnnouncement, BadgeType + 3 error codes |
 | `backend/src/shared/utils/errors.ts` | Modified | Added RECOGNITION_NOT_FOUND, CAMPAIGN_NOT_CLOSED, ALREADY_ANNOUNCED to STATUS_MAP |
-| `backend/src/recognition/processWinners.ts` | Created | EventBridge consumer — campaign.closed → top 3 determination with tie-breaking |
-| `backend/src/recognition/getWinners.ts` | Created | GET /recognition/{campaignId}/winners — returns announced winners only |
-| `backend/src/recognition/getAnnouncement.ts` | Created | GET /recognition/{campaignId}/announcement — returns published announcement |
-| `backend/src/recognition/announceWinners.ts` | Created | POST /recognition/{campaignId}/announce — Admin only, publishes announcement |
-| `backend/src/notifications/processEvent.ts` | Modified | Replaced winners-announced placeholder with real notification logic |
+| `backend/src/handlers/recognition/processWinners.ts` | Created | EventBridge consumer — campaign.closed → top 3 determination with tie-breaking |
+| `backend/src/handlers/recognition/getWinners.ts` | Created | GET /recognition/{campaignId}/winners — returns announced winners only |
+| `backend/src/handlers/recognition/getAnnouncement.ts` | Created | GET /recognition/{campaignId}/announcement — returns published announcement |
+| `backend/src/handlers/recognition/announceWinners.ts` | Created | POST /recognition/{campaignId}/announce — Admin only, publishes announcement |
+| `backend/src/handlers/notifications/processEvent.ts` | Modified | Replaced winners-announced placeholder with real notification logic |
 
 ## Frontend Files
 

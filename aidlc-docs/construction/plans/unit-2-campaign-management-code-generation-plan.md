@@ -15,28 +15,28 @@
   - Modify `backend/src/shared/utils/errors.ts` — add new error codes to STATUS_MAP
 
 - [x] Step 2: Campaign Transition Engine
-  - Create `backend/src/campaigns/transitionEngine.ts` — `checkAndTransition(campaign)` function that evaluates dates vs current time, performs conditional DynamoDB update, publishes EventBridge events
+  - Create `backend/src/handlers/campaigns/transitionEngine.ts` — `checkAndTransition(campaign)` function that evaluates dates vs current time, performs conditional DynamoDB update, publishes EventBridge events
 
 - [x] Step 3: Campaign Handlers
-  - Create `backend/src/campaigns/createCampaign.ts`
-  - Create `backend/src/campaigns/listCampaigns.ts`
-  - Create `backend/src/campaigns/getActiveCampaign.ts`
-  - Create `backend/src/campaigns/getCampaign.ts`
-  - Create `backend/src/campaigns/updateCampaign.ts`
-  - Create `backend/src/campaigns/transitionStatus.ts`
-  - Create `backend/src/campaigns/deleteCampaign.ts`
-  - Create `backend/src/campaigns/assignPanelMembers.ts`
-  - Create `backend/src/campaigns/getPanelMembers.ts`
+  - Create `backend/src/handlers/campaigns/createCampaign.ts`
+  - Create `backend/src/handlers/campaigns/listCampaigns.ts`
+  - Create `backend/src/handlers/campaigns/getActiveCampaign.ts`
+  - Create `backend/src/handlers/campaigns/getCampaign.ts`
+  - Create `backend/src/handlers/campaigns/updateCampaign.ts`
+  - Create `backend/src/handlers/campaigns/transitionStatus.ts`
+  - Create `backend/src/handlers/campaigns/deleteCampaign.ts`
+  - Create `backend/src/handlers/campaigns/assignPanelMembers.ts`
+  - Create `backend/src/handlers/campaigns/getPanelMembers.ts`
 
 - [x] Step 4: Category Handlers
-  - Create `backend/src/campaigns/listCategories.ts`
-  - Create `backend/src/campaigns/createCategory.ts`
-  - Create `backend/src/campaigns/updateCategory.ts`
-  - Create `backend/src/campaigns/deactivateCategory.ts`
+  - Create `backend/src/handlers/campaigns/listCategories.ts`
+  - Create `backend/src/handlers/campaigns/createCategory.ts`
+  - Create `backend/src/handlers/campaigns/updateCategory.ts`
+  - Create `backend/src/handlers/campaigns/deactivateCategory.ts`
 
 - [x] Step 5: Backend Unit Tests
-  - Create `backend/src/campaigns/transitionEngine.test.ts` — tests for lazy transition logic
-  - Create `backend/src/campaigns/createCampaign.test.ts` — tests for campaign creation validation
+  - Create `backend/src/handlers/campaigns/transitionEngine.test.ts` — tests for lazy transition logic
+  - Create `backend/src/handlers/campaigns/createCampaign.test.ts` — tests for campaign creation validation
 
 - [x] Step 6: SAM Template Update
   - Modify `template.yaml` — replace campaign/category Lambda stubs with full definitions (handler paths, API events, IAM policies, GSI definitions for Campaigns and Categories tables)

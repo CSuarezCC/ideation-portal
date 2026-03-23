@@ -14,17 +14,17 @@
 | `backend/src/shared/events/eventBridgeClient.ts` | publishEvent() EventBridge helper |
 | `backend/src/shared/middleware/authorizer.ts` | Lambda Authorizer — JWKS cache + JWT validation |
 | `backend/src/shared/middleware/rbac.ts` | requireRole() wrapper, hasRole() hierarchy check |
-| `backend/src/auth/register.ts` | POST /auth/register handler |
-| `backend/src/auth/login.ts` | POST /auth/login handler |
-| `backend/src/auth/refreshToken.ts` | POST /auth/refresh handler |
-| `backend/src/auth/confirmAccount.ts` | POST /auth/confirm handler |
-| `backend/src/auth/forgotPassword.ts` | POST /auth/forgot-password handler |
-| `backend/src/auth/resetPassword.ts` | POST /auth/reset-password handler |
-| `backend/src/users/getProfile.ts` | GET /users/me handler |
-| `backend/src/users/updateProfile.ts` | PUT /users/me handler |
-| `backend/src/users/listUsers.ts` | GET /users handler (ADMIN only) |
-| `backend/src/users/assignRole.ts` | PUT /users/{userId}/role handler (ADMIN only) |
-| `backend/src/users/deactivateUser.ts` | DELETE /users/{userId} handler (ADMIN only) |
+| `backend/src/handlers/auth/register.ts` | POST /auth/register handler |
+| `backend/src/handlers/auth/login.ts` | POST /auth/login handler |
+| `backend/src/handlers/auth/refreshToken.ts` | POST /auth/refresh handler |
+| `backend/src/handlers/auth/confirmAccount.ts` | POST /auth/confirm handler |
+| `backend/src/handlers/auth/forgotPassword.ts` | POST /auth/forgot-password handler |
+| `backend/src/handlers/auth/resetPassword.ts` | POST /auth/reset-password handler |
+| `backend/src/handlers/users/getProfile.ts` | GET /users/me handler |
+| `backend/src/handlers/users/updateProfile.ts` | PUT /users/me handler |
+| `backend/src/handlers/users/listUsers.ts` | GET /users handler (ADMIN only) |
+| `backend/src/handlers/users/assignRole.ts` | PUT /users/{userId}/role handler (ADMIN only) |
+| `backend/src/handlers/users/deactivateUser.ts` | DELETE /users/{userId} handler (ADMIN only) |
 | `backend/src/shared/utils/validation.test.ts` | Unit tests for validation utilities |
 | `backend/src/shared/middleware/rbac.test.ts` | Unit tests for RBAC role hierarchy |
 | `backend/src/shared/utils/retry.test.ts` | Unit tests for retry utility |

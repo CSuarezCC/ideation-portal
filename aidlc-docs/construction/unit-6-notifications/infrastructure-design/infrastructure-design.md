@@ -9,7 +9,7 @@
 GetNotificationsFunction:
   Type: AWS::Serverless::Function
   Properties:
-    Handler: src/notifications/getNotifications.handler
+    Handler: src/handlers/notifications/getNotifications.handler
     Events:
       Api:
         Type: HttpApi
@@ -28,7 +28,7 @@ GetNotificationsFunction:
 GetUnreadCountFunction:
   Type: AWS::Serverless::Function
   Properties:
-    Handler: src/notifications/getUnreadCount.handler
+    Handler: src/handlers/notifications/getUnreadCount.handler
     Events:
       Api:
         Type: HttpApi
@@ -47,7 +47,7 @@ GetUnreadCountFunction:
 MarkAsReadFunction:
   Type: AWS::Serverless::Function
   Properties:
-    Handler: src/notifications/markAsRead.handler
+    Handler: src/handlers/notifications/markAsRead.handler
     Events:
       Api:
         Type: HttpApi
@@ -66,7 +66,7 @@ MarkAsReadFunction:
 MarkAllAsReadFunction:
   Type: AWS::Serverless::Function
   Properties:
-    Handler: src/notifications/markAllAsRead.handler
+    Handler: src/handlers/notifications/markAllAsRead.handler
     Events:
       Api:
         Type: HttpApi
@@ -87,7 +87,7 @@ MarkAllAsReadFunction:
 NotificationEventConsumerFunction:
   Type: AWS::Serverless::Function
   Properties:
-    Handler: src/notifications/processEvent.handler
+    Handler: src/handlers/notifications/processEvent.handler
     Timeout: 60
     Events:
       IdeaSubmitted:

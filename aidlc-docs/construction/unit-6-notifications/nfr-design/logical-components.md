@@ -2,7 +2,7 @@
 
 ## Backend Lambda Handlers
 
-### API Handlers (backend/src/notifications/)
+### API Handlers (backend/src/handlers/notifications/)
 
 | Handler | Route | Method | Auth | Description |
 |---|---|---|---|---|
@@ -11,7 +11,7 @@
 | markAsRead | /notifications/{notificationId}/read | PUT | All roles | Mark single notification as read |
 | markAllAsRead | /notifications/read-all | PUT | All roles | Batch mark all as read |
 
-### EventBridge Consumer (backend/src/notifications/)
+### EventBridge Consumer (backend/src/handlers/notifications/)
 
 | Handler | Trigger | Description |
 |---|---|---|

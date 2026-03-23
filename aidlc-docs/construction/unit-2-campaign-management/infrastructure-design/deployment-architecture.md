@@ -7,7 +7,7 @@ Same as Unit 1 — all resources in single `template.yaml`, deployed via `sam bu
 Unit 2 code generation will:
 1. Update existing Lambda stub definitions in `template.yaml` with correct handler paths, policies, and API events
 2. Refine CampaignsTable and CategoriesTable GSI definitions
-3. Add campaign handler source files to `backend/src/campaigns/`
+3. Add campaign handler source files to `backend/src/handlers/campaigns/`
 4. Add frontend campaign/category pages and services
 
 ## API Route Map (Unit 2 additions)

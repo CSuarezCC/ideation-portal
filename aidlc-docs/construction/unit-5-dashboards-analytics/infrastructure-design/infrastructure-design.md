@@ -9,7 +9,7 @@
 GetLeaderboardFunction:
   Type: AWS::Serverless::Function
   Properties:
-    Handler: src/dashboard/getLeaderboard.handler
+    Handler: src/handlers/dashboard/getLeaderboard.handler
     Runtime: nodejs22.x
     Policies:
       - DynamoDBReadPolicy:
@@ -37,7 +37,7 @@ GetLeaderboardFunction:
 GetIdeaDetailFunction:
   Type: AWS::Serverless::Function
   Properties:
-    Handler: src/dashboard/getIdeaDetail.handler
+    Handler: src/handlers/dashboard/getIdeaDetail.handler
     Runtime: nodejs22.x
     Policies:
       - DynamoDBReadPolicy:
@@ -65,7 +65,7 @@ GetIdeaDetailFunction:
 GetLeaderboardSummaryFunction:
   Type: AWS::Serverless::Function
   Properties:
-    Handler: src/dashboard/getLeaderboardSummary.handler
+    Handler: src/handlers/dashboard/getLeaderboardSummary.handler
     Runtime: nodejs22.x
     Policies:
       - DynamoDBReadPolicy:
@@ -87,7 +87,7 @@ GetLeaderboardSummaryFunction:
 SearchIdeasFunction:
   Type: AWS::Serverless::Function
   Properties:
-    Handler: src/dashboard/searchIdeas.handler
+    Handler: src/handlers/dashboard/searchIdeas.handler
     Runtime: nodejs22.x
     Policies:
       - DynamoDBReadPolicy:
@@ -117,7 +117,7 @@ SearchIdeasFunction:
 GetTopIdeasFunction:
   Type: AWS::Serverless::Function
   Properties:
-    Handler: src/analytics/getTopIdeas.handler
+    Handler: src/handlers/analytics/getTopIdeas.handler
     Runtime: nodejs22.x
     Policies:
       - DynamoDBReadPolicy:
@@ -145,7 +145,7 @@ GetTopIdeasFunction:
 GetComparativeAnalysisFunction:
   Type: AWS::Serverless::Function
   Properties:
-    Handler: src/analytics/getComparativeAnalysis.handler
+    Handler: src/handlers/analytics/getComparativeAnalysis.handler
     Runtime: nodejs22.x
     Policies:
       - DynamoDBReadPolicy:
@@ -170,7 +170,7 @@ GetComparativeAnalysisFunction:
 GetParticipationMetricsFunction:
   Type: AWS::Serverless::Function
   Properties:
-    Handler: src/analytics/getParticipationMetrics.handler
+    Handler: src/handlers/analytics/getParticipationMetrics.handler
     Runtime: nodejs22.x
     Policies:
       - DynamoDBReadPolicy:
@@ -198,7 +198,7 @@ GetParticipationMetricsFunction:
 GetScoreDistributionFunction:
   Type: AWS::Serverless::Function
   Properties:
-    Handler: src/analytics/getScoreDistribution.handler
+    Handler: src/handlers/analytics/getScoreDistribution.handler
     Runtime: nodejs22.x
     Policies:
       - DynamoDBReadPolicy:
@@ -220,7 +220,7 @@ GetScoreDistributionFunction:
 GetCampaignSummaryFunction:
   Type: AWS::Serverless::Function
   Properties:
-    Handler: src/analytics/getCampaignSummary.handler
+    Handler: src/handlers/analytics/getCampaignSummary.handler
     Runtime: nodejs22.x
     Policies:
       - DynamoDBReadPolicy:

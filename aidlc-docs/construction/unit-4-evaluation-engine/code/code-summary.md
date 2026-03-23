@@ -6,13 +6,13 @@
 |---|---|---|
 | `backend/src/shared/types/index.ts` | Modified | Added Evaluation, EvaluationStatus, AggregatedScore, AnonymizedEvaluation + 5 error codes |
 | `backend/src/shared/utils/errors.ts` | Modified | Added 5 new error codes to STATUS_MAP |
-| `backend/src/evaluations/getMyEvaluation.ts` | Created | GET /evaluations/{ideaId}/mine — own evaluation for an idea |
-| `backend/src/evaluations/saveEvaluationProgress.ts` | Created | PUT /evaluations/{ideaId}/progress — draft save with lenient validation |
-| `backend/src/evaluations/submitEvaluation.ts` | Created | POST /evaluations/{ideaId}/submit — strict validation, lock, aggregation trigger |
-| `backend/src/evaluations/getIdeasForEvaluation.ts` | Created | GET /evaluations/ideas — two-query join, sorted by eval status |
-| `backend/src/evaluations/getPendingEvaluations.ts` | Created | GET /evaluations/pending — unscored ideas for panel member |
-| `backend/src/evaluations/getEvaluationSummary.ts` | Created | GET /evaluations/{ideaId}/summary — blind scoring enforcement |
-| `backend/src/evaluations/getAggregatedScore.ts` | Created | GET /evaluations/{ideaId}/score — averages only |
+| `backend/src/handlers/evaluations/getMyEvaluation.ts` | Created | GET /evaluations/{ideaId}/mine — own evaluation for an idea |
+| `backend/src/handlers/evaluations/saveEvaluationProgress.ts` | Created | PUT /evaluations/{ideaId}/progress — draft save with lenient validation |
+| `backend/src/handlers/evaluations/submitEvaluation.ts` | Created | POST /evaluations/{ideaId}/submit — strict validation, lock, aggregation trigger |
+| `backend/src/handlers/evaluations/getIdeasForEvaluation.ts` | Created | GET /evaluations/ideas — two-query join, sorted by eval status |
+| `backend/src/handlers/evaluations/getPendingEvaluations.ts` | Created | GET /evaluations/pending — unscored ideas for panel member |
+| `backend/src/handlers/evaluations/getEvaluationSummary.ts` | Created | GET /evaluations/{ideaId}/summary — blind scoring enforcement |
+| `backend/src/handlers/evaluations/getAggregatedScore.ts` | Created | GET /evaluations/{ideaId}/score — averages only |
 
 ## Frontend Files
 

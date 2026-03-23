@@ -76,7 +76,7 @@ aws cloudfront create-invalidation --distribution-id {DistributionId} --paths "/
 - Ensure all shared types are exported correctly from `backend/src/shared/types/index.ts`
 
 ### Missing `ulid` Package
-- The `ulid` package is used in `backend/src/notifications/processEvent.ts` but may not be in package.json
+- The `ulid` package is used in `backend/src/handlers/notifications/processEvent.ts` but may not be in package.json
 - Fix: `cd backend && npm install ulid`
 
 ### Frontend Build Fails

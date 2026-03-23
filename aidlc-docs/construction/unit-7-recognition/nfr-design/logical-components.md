@@ -2,13 +2,13 @@
 
 ## Backend Lambda Handlers
 
-### EventBridge Consumer (backend/src/recognition/)
+### EventBridge Consumer (backend/src/handlers/recognition/)
 
 | Handler | Trigger | Description |
 |---|---|---|
 | processWinners | EventBridge: campaign.closed | Determines top 3 winners, writes WinnerRecords + WinnerAnnouncement (Pattern 25, 26, 27) |
 
-### API Handlers (backend/src/recognition/)
+### API Handlers (backend/src/handlers/recognition/)
 
 | Handler | Route | Method | Auth | Description |
 |---|---|---|---|---|
@@ -16,7 +16,7 @@
 | getAnnouncement | /recognition/{campaignId}/announcement | GET | All roles | Returns announcement (404 if not yet announced) |
 | announceWinners | /recognition/{campaignId}/announce | POST | Admin only | Publishes announcement, transitions statuses, fires event |
 
-### Unit 6 Update (backend/src/notifications/)
+### Unit 6 Update (backend/src/handlers/notifications/)
 
 | Handler | Change | Description |
 |---|---|---|

@@ -10,7 +10,7 @@ Unit 4 adds 7 evaluation Lambda functions and API routes to the existing `templa
 
 ```yaml
 GetIdeasForEvaluationFunction:
-  Handler: src/evaluations/getIdeasForEvaluation.handler
+  Handler: src/handlers/evaluations/getIdeasForEvaluation.handler
   Events:
     Api: { Path: /evaluations/ideas, Method: GET }
   Policies:
@@ -19,7 +19,7 @@ GetIdeasForEvaluationFunction:
     - DynamoDBReadPolicy: { TableName: !Ref CampaignsTable }
 
 GetPendingEvaluationsFunction:
-  Handler: src/evaluations/getPendingEvaluations.handler
+  Handler: src/handlers/evaluations/getPendingEvaluations.handler
   Events:
     Api: { Path: /evaluations/pending, Method: GET }
   Policies:
@@ -28,14 +28,14 @@ GetPendingEvaluationsFunction:
     - DynamoDBReadPolicy: { TableName: !Ref CampaignsTable }
 
 GetMyEvaluationFunction:
-  Handler: src/evaluations/getMyEvaluation.handler
+  Handler: src/handlers/evaluations/getMyEvaluation.handler
   Events:
     Api: { Path: /evaluations/{ideaId}/mine, Method: GET }
   Policies:
     - DynamoDBReadPolicy: { TableName: !Ref EvaluationsTable }
 
 SaveEvaluationProgressFunction:
-  Handler: src/evaluations/saveEvaluationProgress.handler
+  Handler: src/handlers/evaluations/saveEvaluationProgress.handler
   Events:
     Api: { Path: /evaluations/{ideaId}/progress, Method: PUT }
   Policies:
@@ -43,7 +43,7 @@ SaveEvaluationProgressFunction:
     - DynamoDBReadPolicy: { TableName: !Ref CampaignsTable }
 
 SubmitEvaluationFunction:
-  Handler: src/evaluations/submitEvaluation.handler
+  Handler: src/handlers/evaluations/submitEvaluation.handler
   Events:
     Api: { Path: /evaluations/{ideaId}/submit, Method: POST }
   Policies:
@@ -57,7 +57,7 @@ SubmitEvaluationFunction:
           Resource: !GetAtt IdeationEventBus.Arn
 
 GetEvaluationSummaryFunction:
-  Handler: src/evaluations/getEvaluationSummary.handler
+  Handler: src/handlers/evaluations/getEvaluationSummary.handler
   Events:
     Api: { Path: /evaluations/{ideaId}/summary, Method: GET }
   Policies:
@@ -65,7 +65,7 @@ GetEvaluationSummaryFunction:
     - DynamoDBReadPolicy: { TableName: !Ref EvaluationsTable }
 
 GetAggregatedScoreFunction:
-  Handler: src/evaluations/getAggregatedScore.handler
+  Handler: src/handlers/evaluations/getAggregatedScore.handler
   Events:
     Api: { Path: /evaluations/{ideaId}/score, Method: GET }
   Policies:

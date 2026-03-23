@@ -20,20 +20,23 @@ The system is decomposed into **7 units of work**, each corresponding to a cohes
 │   └── tsconfig.json
 ├── backend/                    # All Lambda functions (TypeScript)
 │   ├── src/
-│   │   ├── auth/               # Unit 1
-│   │   ├── users/              # Unit 1
-│   │   ├── campaigns/          # Unit 2
-│   │   ├── ideas/              # Unit 3
-│   │   ├── evaluations/        # Unit 4
-│   │   ├── dashboard/          # Unit 5
-│   │   ├── analytics/          # Unit 5
-│   │   ├── notifications/      # Unit 6
-│   │   └── recognition/        # Unit 7
-│   ├── shared/                 # Shared types, middleware, utilities
-│   │   ├── middleware/         # JWT authorizer, RBAC helpers
-│   │   ├── types/              # Shared TypeScript interfaces
-│   │   ├── db/                 # DynamoDB client wrapper
-│   │   └── events/             # EventBridge client wrapper
+│   │   ├── handlers/           # Thin Lambda entry points
+│   │   │   ├── auth/           # Unit 1
+│   │   │   ├── users/          # Unit 1
+│   │   │   ├── campaigns/      # Unit 2
+│   │   │   ├── ideas/          # Unit 3
+│   │   │   ├── evaluations/    # Unit 4
+│   │   │   ├── dashboard/      # Unit 5
+│   │   │   ├── analytics/      # Unit 5
+│   │   │   ├── notifications/  # Unit 6
+│   │   │   └── recognition/    # Unit 7
+│   │   ├── services/           # Reusable business logic
+│   │   ├── repositories/       # Data access layer (DynamoDB)
+│   │   └── shared/             # Shared types, middleware, utilities
+│   │       ├── middleware/     # JWT authorizer, RBAC helpers
+│   │       ├── types/          # Shared TypeScript interfaces
+│   │       ├── db/             # DynamoDB client wrapper
+│   │       └── events/         # EventBridge client wrapper
 │   ├── package.json
 │   └── tsconfig.json
 └── aidlc-docs/                 # Documentation only
@@ -55,11 +58,11 @@ The system is decomposed into **7 units of work**, each corresponding to a cohes
 
 **Deliverables**:
 - `template.yaml` — full SAM infrastructure skeleton (all tables, all Lambda stubs, API Gateway, Cognito, EventBridge bus, S3, CloudFront)
-- `backend/src/auth/` — register, login, refresh, confirm, password reset handlers
-- `backend/src/users/` — profile CRUD, role assignment, user listing handlers
-- `backend/shared/middleware/` — Lambda Authorizer, RBAC middleware
-- `backend/shared/db/` — DynamoDB client wrapper
-- `backend/shared/events/` — EventBridge publisher wrapper
+- `backend/src/handlers/auth/` — register, login, refresh, confirm, password reset handlers
+- `backend/src/handlers/users/` — profile CRUD, role assignment, user listing handlers
+- `backend/src/shared/middleware/` — Lambda Authorizer, RBAC middleware
+- `backend/src/shared/db/` — DynamoDB client wrapper
+- `backend/src/shared/events/` — EventBridge publisher wrapper
 - `frontend/src/pages/auth/` — Login, Register, PasswordReset pages
 - `frontend/src/pages/profile/` — User profile page
 - `frontend/src/services/authService.ts` — API client for auth endpoints
@@ -83,7 +86,7 @@ The system is decomposed into **7 units of work**, each corresponding to a cohes
 - Category management
 
 **Deliverables**:
-- `backend/src/campaigns/` — campaign CRUD, status transitions, panel member assignment, category management handlers
+- `backend/src/handlers/campaigns/` — campaign CRUD, status transitions, panel member assignment, category management handlers
 - `frontend/src/pages/admin/campaigns/` — Campaign list, create/edit, status management UI
 - `frontend/src/pages/admin/categories/` — Category management UI
 - `frontend/src/services/campaignService.ts` — API client for campaign endpoints
@@ -108,7 +111,7 @@ The system is decomposed into **7 units of work**, each corresponding to a cohes
 - S3 attachment handling
 
 **Deliverables**:
-- `backend/src/ideas/` — draft CRUD, auto-save, submit, delete, list/search, S3 pre-signed URL handlers
+- `backend/src/handlers/ideas/` — draft CRUD, auto-save, submit, delete, list/search, S3 pre-signed URL handlers
 - `frontend/src/pages/ideas/` — Idea submission form (with auto-save), My Ideas list, Idea detail view
 - `frontend/src/services/ideaService.ts` — API client for idea endpoints
 - EventBridge event publishing for `idea.submitted`
@@ -133,7 +136,7 @@ The system is decomposed into **7 units of work**, each corresponding to a cohes
 - Async score aggregation via EventBridge
 
 **Deliverables**:
-- `backend/src/evaluations/` — evaluation CRUD, blind scoring enforcement, aggregation trigger, aggregated score storage handlers
+- `backend/src/handlers/evaluations/` — evaluation CRUD, blind scoring enforcement, aggregation trigger, aggregated score storage handlers
 - `frontend/src/pages/evaluation/` — Evaluation queue (ideas to score), Scoring form (3 dimensions + justifications), Evaluation progress view
 - `frontend/src/services/evaluationService.ts` — API client for evaluation endpoints
 - EventBridge event publishing for `evaluation.submitted`, `evaluation.aggregation-complete`
@@ -157,8 +160,8 @@ The system is decomposed into **7 units of work**, each corresponding to a cohes
 - AnalyticsComponent (AnalyticsService Lambda)
 
 **Deliverables**:
-- `backend/src/dashboard/` — leaderboard, idea detail, search handlers
-- `backend/src/analytics/` — top ideas, comparative analysis, participation metrics, score distribution, campaign summary handlers
+- `backend/src/handlers/dashboard/` — leaderboard, idea detail, search handlers
+- `backend/src/handlers/analytics/` — top ideas, comparative analysis, participation metrics, score distribution, campaign summary handlers
 - `frontend/src/pages/dashboard/` — Leaderboard page (multi-dimensional tabs), Idea detail modal/page
 - `frontend/src/pages/analytics/` — Analytics dashboard (top ideas, charts, participation stats)
 - `frontend/src/services/dashboardService.ts` — API client for dashboard endpoints
@@ -181,7 +184,7 @@ The system is decomposed into **7 units of work**, each corresponding to a cohes
 - NotificationComponent (NotificationService Lambda — API + event consumer)
 
 **Deliverables**:
-- `backend/src/notifications/` — notification CRUD handlers (API) + EventBridge consumer handler
+- `backend/src/handlers/notifications/` — notification CRUD handlers (API) + EventBridge consumer handler
 - `frontend/src/components/NotificationBell.tsx` — notification bell with unread count badge
 - `frontend/src/pages/notifications/` — Notification center page
 - `frontend/src/services/notificationService.ts` — API client for notification endpoints
@@ -203,7 +206,7 @@ The system is decomposed into **7 units of work**, each corresponding to a cohes
 - RecognitionComponent (RecognitionService Lambda — event consumer + API)
 
 **Deliverables**:
-- `backend/src/recognition/` — winner determination, badge assignment, announcement creation handlers + EventBridge consumer
+- `backend/src/handlers/recognition/` — winner determination, badge assignment, announcement creation handlers + EventBridge consumer
 - `frontend/src/pages/recognition/` — Winners announcement page, winner badges on idea cards and user profiles
 - `frontend/src/services/recognitionService.ts` — API client for recognition endpoints
 - EventBridge event publishing for `recognition.winners-announced`

@@ -51,6 +51,6 @@
 | Requirement | Approach |
 |---|---|
 | TypeScript strict mode | All backend and frontend code uses TypeScript strict |
-| Shared types | `backend/shared/types/` defines all shared interfaces |
+| Shared types | `backend/src/shared/types/` defines all shared interfaces |
 | Environment config | All config (Cognito Pool ID, Table names) via Lambda environment variables |
 | No hardcoded values | All resource names injected via SAM template environment variables |

@@ -7,11 +7,11 @@
 | `backend/src/shared/types/index.ts` | Modified | Added Notification, NotificationType + NOTIFICATION_NOT_FOUND error code |
 | `backend/src/shared/utils/errors.ts` | Modified | Added NOTIFICATION_NOT_FOUND to STATUS_MAP |
 | `backend/src/shared/db/dynamoClient.ts` | Modified | Added dbBatchWrite helper (BatchWriteItem in chunks of 25) |
-| `backend/src/notifications/getNotifications.ts` | Created | GET /notifications — cursor-based pagination |
-| `backend/src/notifications/getUnreadCount.ts` | Created | GET /notifications/unread-count — count query |
-| `backend/src/notifications/markAsRead.ts` | Created | PUT /notifications/{notificationId}/read — single update |
-| `backend/src/notifications/markAllAsRead.ts` | Created | PUT /notifications/read-all — batch update |
-| `backend/src/notifications/processEvent.ts` | Created | EventBridge consumer — routes 6 event types to notification creation |
+| `backend/src/handlers/notifications/getNotifications.ts` | Created | GET /notifications — cursor-based pagination |
+| `backend/src/handlers/notifications/getUnreadCount.ts` | Created | GET /notifications/unread-count — count query |
+| `backend/src/handlers/notifications/markAsRead.ts` | Created | PUT /notifications/{notificationId}/read — single update |
+| `backend/src/handlers/notifications/markAllAsRead.ts` | Created | PUT /notifications/read-all — batch update |
+| `backend/src/handlers/notifications/processEvent.ts` | Created | EventBridge consumer — routes 6 event types to notification creation |
 
 ## Frontend Files
 

@@ -2,7 +2,7 @@
 
 ## Backend Lambda Handlers
 
-### Dashboard Handlers (backend/src/dashboard/)
+### Dashboard Handlers (backend/src/handlers/dashboard/)
 
 | Handler | Route | Method | Auth | Description |
 |---|---|---|---|---|
@@ -11,7 +11,7 @@
 | getLeaderboardSummary | /dashboard/summary | GET | All roles | Top-level leaderboard stats |
 | searchIdeas | /dashboard/search | GET | All roles | Keyword search (Pattern 19) |
 
-### Analytics Handlers (backend/src/analytics/)
+### Analytics Handlers (backend/src/handlers/analytics/)
 
 | Handler | Route | Method | Auth | Description |
 |---|---|---|---|---|

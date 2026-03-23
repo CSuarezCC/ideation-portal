@@ -15,22 +15,22 @@
   - Modify `backend/src/shared/utils/errors.ts` — add new error codes to STATUS_MAP
 
 - [x] Step 2: Idea Handlers — Draft CRUD
-  - Create `backend/src/ideas/createDraft.ts`
-  - Create `backend/src/ideas/updateDraft.ts`
-  - Create `backend/src/ideas/autoSaveDraft.ts`
-  - Create `backend/src/ideas/deleteDraft.ts`
+  - Create `backend/src/handlers/ideas/createDraft.ts`
+  - Create `backend/src/handlers/ideas/updateDraft.ts`
+  - Create `backend/src/handlers/ideas/autoSaveDraft.ts`
+  - Create `backend/src/handlers/ideas/deleteDraft.ts`
 
 - [x] Step 3: Idea Handlers — Submit & Upload
-  - Create `backend/src/ideas/submitIdea.ts`
-  - Create `backend/src/ideas/getUploadUrl.ts`
+  - Create `backend/src/handlers/ideas/submitIdea.ts`
+  - Create `backend/src/handlers/ideas/getUploadUrl.ts`
 
 - [x] Step 4: Idea Handlers — Read & List
-  - Create `backend/src/ideas/getIdea.ts`
-  - Create `backend/src/ideas/getMyIdeas.ts`
-  - Create `backend/src/ideas/listIdeas.ts`
+  - Create `backend/src/handlers/ideas/getIdea.ts`
+  - Create `backend/src/handlers/ideas/getMyIdeas.ts`
+  - Create `backend/src/handlers/ideas/listIdeas.ts`
 
 - [x] Step 5: Backend Unit Tests
-  - Create `backend/src/ideas/submitIdea.test.ts` — submission validation tests
+  - Create `backend/src/handlers/ideas/submitIdea.test.ts` — submission validation tests
 
 - [x] Step 6: SAM Template Update
   - Modify `template.yaml` — add 9 idea Lambda functions with API events and IAM policies

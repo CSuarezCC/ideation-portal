@@ -40,7 +40,7 @@
 | 7 | Recognition System | ✅ Winner determination + announce | ✅ Announcement page + leaderboard | ✅ 4 Lambda functions |
 
 ## Known Issues
-- `ulid` package used in `backend/src/notifications/processEvent.ts` may need explicit `npm install ulid` if not already in node_modules
+- `ulid` package used in `backend/src/handlers/notifications/processEvent.ts` may need explicit `npm install ulid` if not already in node_modules
 
 ## Next Steps
 1. Run `cd backend && npm install && npm install ulid && npm run build` — fix any TS errors

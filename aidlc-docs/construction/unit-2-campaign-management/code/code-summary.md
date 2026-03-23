@@ -6,22 +6,22 @@
 |---|---|---|
 | `backend/src/shared/types/index.ts` | Modified | Added Campaign, Category, CampaignStatus, CampaignEventPayload types + new error codes |
 | `backend/src/shared/utils/errors.ts` | Modified | Added 8 new error codes to STATUS_MAP |
-| `backend/src/campaigns/transitionEngine.ts` | Created | Lazy auto-transition engine with conditional DynamoDB updates and cascading transitions |
-| `backend/src/campaigns/createCampaign.ts` | Created | POST /campaigns — campaign creation with validation |
-| `backend/src/campaigns/listCampaigns.ts` | Created | GET /campaigns — list with status filter + lazy transitions |
-| `backend/src/campaigns/getActiveCampaign.ts` | Created | GET /campaigns/active — get active campaign + lazy transition |
-| `backend/src/campaigns/getCampaign.ts` | Created | GET /campaigns/{id} — get by ID + lazy transition |
-| `backend/src/campaigns/updateCampaign.ts` | Created | PUT /campaigns/{id} — update (DRAFT only) |
-| `backend/src/campaigns/transitionStatus.ts` | Created | PUT /campaigns/{id}/status — manual forward transition |
-| `backend/src/campaigns/deleteCampaign.ts` | Created | DELETE /campaigns/{id} — soft delete (DRAFT only) |
-| `backend/src/campaigns/assignPanelMembers.ts` | Created | POST /campaigns/{id}/panel-members — assign with role validation |
-| `backend/src/campaigns/getPanelMembers.ts` | Created | GET /campaigns/{id}/panel-members — resolve panel member profiles |
-| `backend/src/campaigns/listCategories.ts` | Created | GET /campaigns/categories — list with activeOnly filter |
-| `backend/src/campaigns/createCategory.ts` | Created | POST /campaigns/categories — create with uniqueness check |
-| `backend/src/campaigns/updateCategory.ts` | Created | PUT /campaigns/categories/{id} — update with uniqueness check |
-| `backend/src/campaigns/deactivateCategory.ts` | Created | PUT /campaigns/categories/{id}/deactivate — toggle active/inactive |
-| `backend/src/campaigns/transitionEngine.test.ts` | Created | Unit tests for lazy transition logic |
-| `backend/src/campaigns/createCampaign.test.ts` | Created | Unit tests for campaign creation validation |
+| `backend/src/handlers/campaigns/transitionEngine.ts` | Created | Lazy auto-transition engine with conditional DynamoDB updates and cascading transitions |
+| `backend/src/handlers/campaigns/createCampaign.ts` | Created | POST /campaigns — campaign creation with validation |
+| `backend/src/handlers/campaigns/listCampaigns.ts` | Created | GET /campaigns — list with status filter + lazy transitions |
+| `backend/src/handlers/campaigns/getActiveCampaign.ts` | Created | GET /campaigns/active — get active campaign + lazy transition |
+| `backend/src/handlers/campaigns/getCampaign.ts` | Created | GET /campaigns/{id} — get by ID + lazy transition |
+| `backend/src/handlers/campaigns/updateCampaign.ts` | Created | PUT /campaigns/{id} — update (DRAFT only) |
+| `backend/src/handlers/campaigns/transitionStatus.ts` | Created | PUT /campaigns/{id}/status — manual forward transition |
+| `backend/src/handlers/campaigns/deleteCampaign.ts` | Created | DELETE /campaigns/{id} — soft delete (DRAFT only) |
+| `backend/src/handlers/campaigns/assignPanelMembers.ts` | Created | POST /campaigns/{id}/panel-members — assign with role validation |
+| `backend/src/handlers/campaigns/getPanelMembers.ts` | Created | GET /campaigns/{id}/panel-members — resolve panel member profiles |
+| `backend/src/handlers/campaigns/listCategories.ts` | Created | GET /campaigns/categories — list with activeOnly filter |
+| `backend/src/handlers/campaigns/createCategory.ts` | Created | POST /campaigns/categories — create with uniqueness check |
+| `backend/src/handlers/campaigns/updateCategory.ts` | Created | PUT /campaigns/categories/{id} — update with uniqueness check |
+| `backend/src/handlers/campaigns/deactivateCategory.ts` | Created | PUT /campaigns/categories/{id}/deactivate — toggle active/inactive |
+| `backend/src/handlers/campaigns/transitionEngine.test.ts` | Created | Unit tests for lazy transition logic |
+| `backend/src/handlers/campaigns/createCampaign.test.ts` | Created | Unit tests for campaign creation validation |
 
 ## Frontend Files
 

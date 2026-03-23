@@ -6,15 +6,15 @@
 |---|---|---|
 | `backend/src/shared/types/index.ts` | Modified | Added LeaderboardEntry, IdeaDetail, TopIdea, ParticipationMetrics, ScoreDistribution, ScoreBucket, ComparativeIdeaRow, CampaignSummaryData + 3 error codes |
 | `backend/src/shared/utils/errors.ts` | Modified | Added 3 new error codes to STATUS_MAP |
-| `backend/src/dashboard/getLeaderboard.ts` | Created | GET /dashboard/leaderboard — multi-dimension sort, role-based author stripping |
-| `backend/src/dashboard/getIdeaDetail.ts` | Created | GET /dashboard/ideas/{ideaId} — role-based field visibility |
-| `backend/src/dashboard/getLeaderboardSummary.ts` | Created | GET /dashboard/summary — top-level leaderboard stats |
-| `backend/src/dashboard/searchIdeas.ts` | Created | GET /dashboard/search — in-memory keyword filter |
-| `backend/src/analytics/getTopIdeas.ts` | Created | GET /analytics/top-ideas — top N with tie-breaking |
-| `backend/src/analytics/getComparativeAnalysis.ts` | Created | GET /analytics/comparative — cross-dimension comparison |
-| `backend/src/analytics/getParticipationMetrics.ts` | Created | GET /analytics/participation — submission/evaluation counts |
-| `backend/src/analytics/getScoreDistribution.ts` | Created | GET /analytics/score-distribution — histogram bucketing |
-| `backend/src/analytics/getCampaignSummary.ts` | Created | GET /analytics/campaign-summary — composite summary |
+| `backend/src/handlers/dashboard/getLeaderboard.ts` | Created | GET /dashboard/leaderboard — multi-dimension sort, role-based author stripping |
+| `backend/src/handlers/dashboard/getIdeaDetail.ts` | Created | GET /dashboard/ideas/{ideaId} — role-based field visibility |
+| `backend/src/handlers/dashboard/getLeaderboardSummary.ts` | Created | GET /dashboard/summary — top-level leaderboard stats |
+| `backend/src/handlers/dashboard/searchIdeas.ts` | Created | GET /dashboard/search — in-memory keyword filter |
+| `backend/src/handlers/analytics/getTopIdeas.ts` | Created | GET /analytics/top-ideas — top N with tie-breaking |
+| `backend/src/handlers/analytics/getComparativeAnalysis.ts` | Created | GET /analytics/comparative — cross-dimension comparison |
+| `backend/src/handlers/analytics/getParticipationMetrics.ts` | Created | GET /analytics/participation — submission/evaluation counts |
+| `backend/src/handlers/analytics/getScoreDistribution.ts` | Created | GET /analytics/score-distribution — histogram bucketing |
+| `backend/src/handlers/analytics/getCampaignSummary.ts` | Created | GET /analytics/campaign-summary — composite summary |
 
 ## Frontend Files
 

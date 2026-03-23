@@ -29,50 +29,50 @@
     - Outputs section
 
 - [x] Step 3: Shared Types
-  - Create `backend/shared/types/index.ts`
+  - Create `backend/src/shared/types/index.ts`
     - User, Role enum, AuthContext, ErrorResponse, TokenSet interfaces
 
 - [x] Step 4: Shared Utilities
-  - Create `backend/shared/utils/errors.ts` — error response builder
-  - Create `backend/shared/utils/retry.ts` — withRetry() utility
-  - Create `backend/shared/utils/validation.ts` — email/password validators
+  - Create `backend/src/shared/utils/errors.ts` — error response builder
+  - Create `backend/src/shared/utils/retry.ts` — withRetry() utility
+  - Create `backend/src/shared/utils/validation.ts` — email/password validators
 
 - [x] Step 5: Shared DynamoDB Client
-  - Create `backend/shared/db/dynamoClient.ts` — typed DynamoDB DocumentClient wrapper
+  - Create `backend/src/shared/db/dynamoClient.ts` — typed DynamoDB DocumentClient wrapper
 
 - [x] Step 6: Shared EventBridge Client
-  - Create `backend/shared/events/eventBridgeClient.ts` — publish() helper
+  - Create `backend/src/shared/events/eventBridgeClient.ts` — publish() helper
 
 - [x] Step 7: Lambda Authorizer
-  - Create `backend/shared/middleware/authorizer.ts`
+  - Create `backend/src/shared/middleware/authorizer.ts`
     - JWKS fetch + in-memory cache
     - JWT validation using aws-jwt-verify
     - IAM policy generation with userId/email/role context
 
 - [x] Step 8: RBAC Middleware
-  - Create `backend/shared/middleware/rbac.ts`
+  - Create `backend/src/shared/middleware/rbac.ts`
     - requireRole() handler wrapper
     - hasRole() role hierarchy check
 
 - [x] Step 9: Auth Handlers
-  - Create `backend/src/auth/register.ts`
-  - Create `backend/src/auth/login.ts`
-  - Create `backend/src/auth/refreshToken.ts`
-  - Create `backend/src/auth/confirmAccount.ts`
-  - Create `backend/src/auth/forgotPassword.ts`
-  - Create `backend/src/auth/resetPassword.ts`
+  - Create `backend/src/handlers/auth/register.ts`
+  - Create `backend/src/handlers/auth/login.ts`
+  - Create `backend/src/handlers/auth/refreshToken.ts`
+  - Create `backend/src/handlers/auth/confirmAccount.ts`
+  - Create `backend/src/handlers/auth/forgotPassword.ts`
+  - Create `backend/src/handlers/auth/resetPassword.ts`
 
 - [x] Step 10: User Handlers
-  - Create `backend/src/users/getProfile.ts`
-  - Create `backend/src/users/updateProfile.ts`
-  - Create `backend/src/users/listUsers.ts`
-  - Create `backend/src/users/assignRole.ts`
-  - Create `backend/src/users/deactivateUser.ts`
+  - Create `backend/src/handlers/users/getProfile.ts`
+  - Create `backend/src/handlers/users/updateProfile.ts`
+  - Create `backend/src/handlers/users/listUsers.ts`
+  - Create `backend/src/handlers/users/assignRole.ts`
+  - Create `backend/src/handlers/users/deactivateUser.ts`
 
 - [x] Step 11: Backend Unit Tests
-  - Create `backend/src/auth/*.test.ts` — tests for each auth handler
-  - Create `backend/src/users/*.test.ts` — tests for each user handler
-  - Create `backend/shared/**/*.test.ts` — tests for middleware and utilities
+  - Create `backend/src/handlers/auth/*.test.ts` — tests for each auth handler
+  - Create `backend/src/handlers/users/*.test.ts` — tests for each user handler
+  - Create `backend/src/shared/**/*.test.ts` — tests for middleware and utilities
 
 - [x] Step 12: Frontend — Project Setup
   - Create `frontend/index.html`

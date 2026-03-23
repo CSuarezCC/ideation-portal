@@ -22,7 +22,7 @@ Already provisioned in template.yaml with PK=`campaignId` (S), SK=`rank` (N).
 ProcessWinnersFunction:
   Type: AWS::Serverless::Function
   Properties:
-    Handler: src/recognition/processWinners.handler
+    Handler: src/handlers/recognition/processWinners.handler
     Timeout: 30
     Events:
       CampaignClosed:
@@ -46,7 +46,7 @@ ProcessWinnersFunction:
 GetWinnersFunction:
   Type: AWS::Serverless::Function
   Properties:
-    Handler: src/recognition/getWinners.handler
+    Handler: src/handlers/recognition/getWinners.handler
     Events:
       Api:
         Type: HttpApi
@@ -65,7 +65,7 @@ GetWinnersFunction:
 GetAnnouncementFunction:
   Type: AWS::Serverless::Function
   Properties:
-    Handler: src/recognition/getAnnouncement.handler
+    Handler: src/handlers/recognition/getAnnouncement.handler
     Events:
       Api:
         Type: HttpApi
@@ -84,7 +84,7 @@ GetAnnouncementFunction:
 AnnounceWinnersFunction:
   Type: AWS::Serverless::Function
   Properties:
-    Handler: src/recognition/announceWinners.handler
+    Handler: src/handlers/recognition/announceWinners.handler
     Timeout: 30
     Events:
       Api:

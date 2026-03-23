@@ -15,7 +15,7 @@ Unit 2 adds campaign and category Lambda functions and API routes to the existin
 CreateCampaignFunction:
   Type: AWS::Serverless::Function
   Properties:
-    Handler: src/campaigns/createCampaign.handler
+    Handler: src/handlers/campaigns/createCampaign.handler
     CodeUri: backend/
     Events:
       Api:
@@ -31,7 +31,7 @@ CreateCampaignFunction:
 ListCampaignsFunction:
   Type: AWS::Serverless::Function
   Properties:
-    Handler: src/campaigns/listCampaigns.handler
+    Handler: src/handlers/campaigns/listCampaigns.handler
     CodeUri: backend/
     Events:
       Api:
@@ -51,7 +51,7 @@ ListCampaignsFunction:
 GetActiveCampaignFunction:
   Type: AWS::Serverless::Function
   Properties:
-    Handler: src/campaigns/getActiveCampaign.handler
+    Handler: src/handlers/campaigns/getActiveCampaign.handler
     CodeUri: backend/
     Events:
       Api:
@@ -71,7 +71,7 @@ GetActiveCampaignFunction:
 GetCampaignFunction:
   Type: AWS::Serverless::Function
   Properties:
-    Handler: src/campaigns/getCampaign.handler
+    Handler: src/handlers/campaigns/getCampaign.handler
     CodeUri: backend/
     Events:
       Api:
@@ -91,7 +91,7 @@ GetCampaignFunction:
 UpdateCampaignFunction:
   Type: AWS::Serverless::Function
   Properties:
-    Handler: src/campaigns/updateCampaign.handler
+    Handler: src/handlers/campaigns/updateCampaign.handler
     CodeUri: backend/
     Events:
       Api:
@@ -107,7 +107,7 @@ UpdateCampaignFunction:
 TransitionStatusFunction:
   Type: AWS::Serverless::Function
   Properties:
-    Handler: src/campaigns/transitionStatus.handler
+    Handler: src/handlers/campaigns/transitionStatus.handler
     CodeUri: backend/
     Events:
       Api:
@@ -127,7 +127,7 @@ TransitionStatusFunction:
 DeleteCampaignFunction:
   Type: AWS::Serverless::Function
   Properties:
-    Handler: src/campaigns/deleteCampaign.handler
+    Handler: src/handlers/campaigns/deleteCampaign.handler
     CodeUri: backend/
     Events:
       Api:
@@ -143,7 +143,7 @@ DeleteCampaignFunction:
 AssignPanelMembersFunction:
   Type: AWS::Serverless::Function
   Properties:
-    Handler: src/campaigns/assignPanelMembers.handler
+    Handler: src/handlers/campaigns/assignPanelMembers.handler
     CodeUri: backend/
     Events:
       Api:
@@ -161,7 +161,7 @@ AssignPanelMembersFunction:
 GetPanelMembersFunction:
   Type: AWS::Serverless::Function
   Properties:
-    Handler: src/campaigns/getPanelMembers.handler
+    Handler: src/handlers/campaigns/getPanelMembers.handler
     CodeUri: backend/
     Events:
       Api:
@@ -183,7 +183,7 @@ GetPanelMembersFunction:
 ListCategoriesFunction:
   Type: AWS::Serverless::Function
   Properties:
-    Handler: src/campaigns/listCategories.handler
+    Handler: src/handlers/campaigns/listCategories.handler
     CodeUri: backend/
     Events:
       Api:
@@ -199,7 +199,7 @@ ListCategoriesFunction:
 CreateCategoryFunction:
   Type: AWS::Serverless::Function
   Properties:
-    Handler: src/campaigns/createCategory.handler
+    Handler: src/handlers/campaigns/createCategory.handler
     CodeUri: backend/
     Events:
       Api:
@@ -215,7 +215,7 @@ CreateCategoryFunction:
 UpdateCategoryFunction:
   Type: AWS::Serverless::Function
   Properties:
-    Handler: src/campaigns/updateCategory.handler
+    Handler: src/handlers/campaigns/updateCategory.handler
     CodeUri: backend/
     Events:
       Api:
@@ -231,7 +231,7 @@ UpdateCategoryFunction:
 DeactivateCategoryFunction:
   Type: AWS::Serverless::Function
   Properties:
-    Handler: src/campaigns/deactivateCategory.handler
+    Handler: src/handlers/campaigns/deactivateCategory.handler
     CodeUri: backend/
     Events:
       Api:

@@ -78,16 +78,19 @@ sam local start-api
 ├── samconfig.toml         # SAM deployment configs (dev/staging/prod)
 ├── backend/               # Lambda functions (TypeScript)
 │   └── src/
-│       ├── auth/          # Auth handlers (Unit 1)
-│       ├── users/         # User handlers (Unit 1)
-│       ├── campaigns/     # Campaign handlers (Unit 2)
-│       ├── ideas/         # Idea handlers (Unit 3)
-│       ├── evaluations/   # Evaluation handlers (Unit 4)
-│       ├── dashboard/     # Dashboard handlers (Unit 5)
-│       ├── analytics/     # Analytics handlers (Unit 5)
-│       ├── notifications/ # Notification handlers (Unit 6)
-│       ├── recognition/   # Recognition handlers (Unit 7)
-│       └── shared/        # Shared middleware, DB client, types
+│       ├── handlers/      # Thin Lambda entry points (parse event → call service → return response)
+│       │   ├── auth/          # Auth handlers (Unit 1)
+│       │   ├── users/         # User handlers (Unit 1)
+│       │   ├── campaigns/     # Campaign handlers (Unit 2)
+│       │   ├── ideas/         # Idea handlers (Unit 3)
+│       │   ├── evaluations/   # Evaluation handlers (Unit 4)
+│       │   ├── dashboard/     # Dashboard handlers (Unit 5)
+│       │   ├── analytics/     # Analytics handlers (Unit 5)
+│       │   ├── notifications/ # Notification handlers (Unit 6)
+│       │   └── recognition/   # Recognition handlers (Unit 7)
+│       ├── services/      # Reusable business logic (no HTTP concerns)
+│       ├── repositories/  # Data access layer (DynamoDB operations per entity)
+│       └── shared/        # Shared middleware, DB client, types, utils
 └── frontend/              # React SPA (TypeScript)
     └── src/
         ├── pages/         # Page components

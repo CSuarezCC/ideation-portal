@@ -10,28 +10,28 @@ Unit 3 adds idea Lambda functions and API routes to the existing `template.yaml`
 
 ```yaml
 CreateDraftFunction:
-  Handler: src/ideas/createDraft.handler
+  Handler: src/handlers/ideas/createDraft.handler
   Events:
     Api: { Path: /ideas/draft, Method: POST }
   Policies:
     - DynamoDBCrudPolicy: { TableName: !Ref IdeasTable }
 
 UpdateDraftFunction:
-  Handler: src/ideas/updateDraft.handler
+  Handler: src/handlers/ideas/updateDraft.handler
   Events:
     Api: { Path: /ideas/{id}/draft, Method: PUT }
   Policies:
     - DynamoDBCrudPolicy: { TableName: !Ref IdeasTable }
 
 AutoSaveDraftFunction:
-  Handler: src/ideas/autoSaveDraft.handler
+  Handler: src/handlers/ideas/autoSaveDraft.handler
   Events:
     Api: { Path: /ideas/{id}/autosave, Method: PUT }
   Policies:
     - DynamoDBCrudPolicy: { TableName: !Ref IdeasTable }
 
 SubmitIdeaFunction:
-  Handler: src/ideas/submitIdea.handler
+  Handler: src/handlers/ideas/submitIdea.handler
   Events:
     Api: { Path: /ideas/{id}/submit, Method: POST }
   Policies:
@@ -44,7 +44,7 @@ SubmitIdeaFunction:
           Resource: !GetAtt IdeationEventBus.Arn
 
 DeleteDraftFunction:
-  Handler: src/ideas/deleteDraft.handler
+  Handler: src/handlers/ideas/deleteDraft.handler
   Events:
     Api: { Path: /ideas/{id}, Method: DELETE }
   Policies:
@@ -55,28 +55,28 @@ DeleteDraftFunction:
           Resource: !Sub ${AttachmentsBucket.Arn}/ideas/*
 
 ListIdeasFunction:
-  Handler: src/ideas/listIdeas.handler
+  Handler: src/handlers/ideas/listIdeas.handler
   Events:
     Api: { Path: /ideas, Method: GET }
   Policies:
     - DynamoDBReadPolicy: { TableName: !Ref IdeasTable }
 
 GetMyIdeasFunction:
-  Handler: src/ideas/getMyIdeas.handler
+  Handler: src/handlers/ideas/getMyIdeas.handler
   Events:
     Api: { Path: /ideas/mine, Method: GET }
   Policies:
     - DynamoDBReadPolicy: { TableName: !Ref IdeasTable }
 
 GetIdeaFunction:
-  Handler: src/ideas/getIdea.handler
+  Handler: src/handlers/ideas/getIdea.handler
   Events:
     Api: { Path: /ideas/{id}, Method: GET }
   Policies:
     - DynamoDBReadPolicy: { TableName: !Ref IdeasTable }
 
 GetUploadUrlFunction:
-  Handler: src/ideas/getUploadUrl.handler
+  Handler: src/handlers/ideas/getUploadUrl.handler
   Events:
     Api: { Path: /ideas/{id}/upload-url, Method: POST }
   Policies:
