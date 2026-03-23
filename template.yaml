@@ -1,0 +1,1599 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Ideation Portal — Serverless AWS SAM
+
+Globals:
+  Function:
+    Runtime: nodejs22.x
+    Architectures: [arm64]
+    Timeout: 30
+    MemorySize: 256
+    CodeUri: backend/
+    Handler: dist/index.handler
+    Environment:
+      Variables:
+        USERS_TABLE: !Ref UsersTable
+        CAMPAIGNS_TABLE: !Ref CampaignsTable
+        CATEGORIES_TABLE: !Ref CategoriesTable
+        IDEAS_TABLE: !Ref IdeasTable
+        EVALUATIONS_TABLE: !Ref EvaluationsTable
+        AGGREGATED_SCORES_TABLE: !Ref AggregatedScoresTable
+        NOTIFICATIONS_TABLE: !Ref NotificationsTable
+        WINNERS_TABLE: !Ref WinnersTable
+        EVENT_BUS_NAME: !Ref IdeationEventBus
+        USER_POOL_ID: !Ref CognitoUserPool
+        USER_POOL_CLIENT_ID: !Ref CognitoUserPoolClient
+        ATTACHMENTS_BUCKET: !Ref AttachmentsBucket
+        REGION: !Ref AWS::Region
+
+Parameters:
+  Environment:
+    Type: String
+    Default: dev
+    AllowedValues: [dev, staging, prod]
+
+Resources:
+
+  # ─── Cognito ───────────────────────────────────────────────────────────────
+
+  CognitoUserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: !Sub ideation-portal-users-${Environment}
+      UsernameAttributes: [email]
+      AutoVerifiedAttributes: [email]
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+          RequireUppercase: true
+          RequireLowercase: true
+          RequireNumbers: true
+          RequireSymbols: false
+      Schema:
+        - Name: role
+          AttributeDataType: String
+          Mutable: true
+      AccountRecoverySetting:
+        RecoveryMechanisms:
+          - Name: verified_email
+            Priority: 1
+
+  CognitoUserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      ClientName: !Sub ideation-portal-client-${Environment}
+      UserPoolId: !Ref CognitoUserPool
+      GenerateSecret: false
+      ExplicitAuthFlows:
+        - ALLOW_USER_PASSWORD_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
+        - ALLOW_USER_SRP_AUTH
+      PreventUserExistenceErrors: ENABLED
+
+  # ─── API Gateway ───────────────────────────────────────────────────────────
+
+  HttpApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      StageName: !Ref Environment
+      Auth:
+        DefaultAuthorizer: LambdaAuthorizer
+        Authorizers:
+          LambdaAuthorizer:
+            AuthorizerPayloadFormatVersion: "2.0"
+            FunctionArn: !GetAtt LambdaAuthorizerFunction.Arn
+            Identity:
+              Headers: [Authorization]
+            AuthorizerResultTtlInSeconds: 300
+      CorsConfiguration:
+        AllowOrigins:
+          - !Sub "https://${FrontendDistribution.DomainName}"
+        AllowMethods: [GET, POST, PUT, DELETE, OPTIONS]
+        AllowHeaders: [Authorization, Content-Type]
+        AllowCredentials: false
+
+  LambdaAuthorizerPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt LambdaAuthorizerFunction.Arn
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+
+  # ─── Lambda Authorizer ─────────────────────────────────────────────────────
+
+  LambdaAuthorizerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ideation-portal-authorizer-${Environment}
+      Handler: src/shared/middleware/authorizer.handler
+      Policies:
+        - AWSLambdaBasicExecutionRole
+
+  # ─── Unit 1: Auth Functions ────────────────────────────────────────────────
+
+  RegisterFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ideation-portal-register-${Environment}
+      Handler: src/auth/register.handler
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /auth/register
+            Method: POST
+            Auth:
+              Authorizer: NONE
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - DynamoDBCrudPolicy:
+            TableName: !Ref UsersTable
+        - Statement:
+            - Effect: Allow
+              Action:
+                - cognito-idp:AdminCreateUser
+                - cognito-idp:AdminSetUserPassword
+                - cognito-idp:AdminUpdateUserAttributes
+              Resource: !GetAtt CognitoUserPool.Arn
+
+  LoginFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ideation-portal-login-${Environment}
+      Handler: src/auth/login.handler
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /auth/login
+            Method: POST
+            Auth:
+              Authorizer: NONE
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - Statement:
+            - Effect: Allow
+              Action: cognito-idp:InitiateAuth
+              Resource: !GetAtt CognitoUserPool.Arn
+
+  RefreshTokenFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ideation-portal-refresh-token-${Environment}
+      Handler: src/auth/refreshToken.handler
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /auth/refresh
+            Method: POST
+            Auth:
+              Authorizer: NONE
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - Statement:
+            - Effect: Allow
+              Action: cognito-idp:InitiateAuth
+              Resource: !GetAtt CognitoUserPool.Arn
+
+  ConfirmAccountFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ideation-portal-confirm-account-${Environment}
+      Handler: src/auth/confirmAccount.handler
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /auth/confirm
+            Method: POST
+            Auth:
+              Authorizer: NONE
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - Statement:
+            - Effect: Allow
+              Action: cognito-idp:ConfirmSignUp
+              Resource: !GetAtt CognitoUserPool.Arn
+
+  ForgotPasswordFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ideation-portal-forgot-password-${Environment}
+      Handler: src/auth/forgotPassword.handler
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /auth/forgot-password
+            Method: POST
+            Auth:
+              Authorizer: NONE
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - Statement:
+            - Effect: Allow
+              Action: cognito-idp:ForgotPassword
+              Resource: !GetAtt CognitoUserPool.Arn
+
+  ResetPasswordFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ideation-portal-reset-password-${Environment}
+      Handler: src/auth/resetPassword.handler
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /auth/reset-password
+            Method: POST
+            Auth:
+              Authorizer: NONE
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - Statement:
+            - Effect: Allow
+              Action:
+                - cognito-idp:ConfirmForgotPassword
+                - cognito-idp:AdminUserGlobalSignOut
+              Resource: !GetAtt CognitoUserPool.Arn
+
+  # ─── Unit 1: User Functions ────────────────────────────────────────────────
+
+  GetProfileFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ideation-portal-get-profile-${Environment}
+      Handler: src/users/getProfile.handler
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /users/me
+            Method: GET
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - DynamoDBReadPolicy:
+            TableName: !Ref UsersTable
+
+  UpdateProfileFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ideation-portal-update-profile-${Environment}
+      Handler: src/users/updateProfile.handler
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /users/me
+            Method: PUT
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - DynamoDBCrudPolicy:
+            TableName: !Ref UsersTable
+
+  ListUsersFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ideation-portal-list-users-${Environment}
+      Handler: src/users/listUsers.handler
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /users
+            Method: GET
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - DynamoDBReadPolicy:
+            TableName: !Ref UsersTable
+
+  AssignRoleFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ideation-portal-assign-role-${Environment}
+      Handler: src/users/assignRole.handler
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /users/{userId}/role
+            Method: PUT
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - DynamoDBCrudPolicy:
+            TableName: !Ref UsersTable
+        - Statement:
+            - Effect: Allow
+              Action: cognito-idp:AdminUpdateUserAttributes
+              Resource: !GetAtt CognitoUserPool.Arn
+
+  DeactivateUserFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ideation-portal-deactivate-user-${Environment}
+      Handler: src/users/deactivateUser.handler
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /users/{userId}
+            Method: DELETE
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - DynamoDBCrudPolicy:
+            TableName: !Ref UsersTable
+        - Statement:
+            - Effect: Allow
+              Action: cognito-idp:AdminDisableUser
+              Resource: !GetAtt CognitoUserPool.Arn
+
+  # ─── Unit 2: Campaign Functions ──────────────────────────────────────────
+
+  CreateCampaignFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ideation-portal-create-campaign-${Environment}
+      Handler: src/campaigns/createCampaign.handler
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /campaigns
+            Method: POST
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - DynamoDBCrudPolicy:
+            TableName: !Ref CampaignsTable
+
+  ListCampaignsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ideation-portal-list-campaigns-${Environment}
+      Handler: src/campaigns/listCampaigns.handler
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /campaigns
+            Method: GET
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - DynamoDBCrudPolicy:
+            TableName: !Ref CampaignsTable
+        - Statement:
+            - Effect: Allow
+              Action: events:PutEvents
+              Resource: !GetAtt IdeationEventBus.Arn
+
+  GetActiveCampaignFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ideation-portal-get-active-campaign-${Environment}
+      Handler: src/campaigns/getActiveCampaign.handler
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /campaigns/active
+            Method: GET
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - DynamoDBCrudPolicy:
+            TableName: !Ref CampaignsTable
+        - Statement:
+            - Effect: Allow
+              Action: events:PutEvents
+              Resource: !GetAtt IdeationEventBus.Arn
+
+  GetCampaignFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ideation-portal-get-campaign-${Environment}
+      Handler: src/campaigns/getCampaign.handler
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /campaigns/{id}
+            Method: GET
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - DynamoDBCrudPolicy:
+            TableName: !Ref CampaignsTable
+        - Statement:
+            - Effect: Allow
+              Action: events:PutEvents
+              Resource: !GetAtt IdeationEventBus.Arn
+
+  UpdateCampaignFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ideation-portal-update-campaign-${Environment}
+      Handler: src/campaigns/updateCampaign.handler
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /campaigns/{id}
+            Method: PUT
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - DynamoDBCrudPolicy:
+            TableName: !Ref CampaignsTable
+
+  TransitionStatusFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ideation-portal-transition-status-${Environment}
+      Handler: src/campaigns/transitionStatus.handler
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /campaigns/{id}/status
+            Method: PUT
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - DynamoDBCrudPolicy:
+            TableName: !Ref CampaignsTable
+        - Statement:
+            - Effect: Allow
+              Action: events:PutEvents
+              Resource: !GetAtt IdeationEventBus.Arn
+
+  DeleteCampaignFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ideation-portal-delete-campaign-${Environment}
+      Handler: src/campaigns/deleteCampaign.handler
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /campaigns/{id}
+            Method: DELETE
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - DynamoDBCrudPolicy:
+            TableName: !Ref CampaignsTable
+
+  AssignPanelMembersFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ideation-portal-assign-panel-members-${Environment}
+      Handler: src/campaigns/assignPanelMembers.handler
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /campaigns/{id}/panel-members
+            Method: POST
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - DynamoDBCrudPolicy:
+            TableName: !Ref CampaignsTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref UsersTable
+
+  GetPanelMembersFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ideation-portal-get-panel-members-${Environment}
+      Handler: src/campaigns/getPanelMembers.handler
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /campaigns/{id}/panel-members
+            Method: GET
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - DynamoDBReadPolicy:
+            TableName: !Ref CampaignsTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref UsersTable
+
+  # ─── Unit 2: Category Functions ────────────────────────────────────────────
+
+  ListCategoriesFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ideation-portal-list-categories-${Environment}
+      Handler: src/campaigns/listCategories.handler
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /campaigns/categories
+            Method: GET
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - DynamoDBReadPolicy:
+            TableName: !Ref CategoriesTable
+
+  CreateCategoryFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ideation-portal-create-category-${Environment}
+      Handler: src/campaigns/createCategory.handler
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /campaigns/categories
+            Method: POST
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - DynamoDBCrudPolicy:
+            TableName: !Ref CategoriesTable
+
+  UpdateCategoryFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ideation-portal-update-category-${Environment}
+      Handler: src/campaigns/updateCategory.handler
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /campaigns/categories/{categoryId}
+            Method: PUT
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - DynamoDBCrudPolicy:
+            TableName: !Ref CategoriesTable
+
+  DeactivateCategoryFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ideation-portal-deactivate-category-${Environment}
+      Handler: src/campaigns/deactivateCategory.handler
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /campaigns/categories/{categoryId}/deactivate
+            Method: PUT
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - DynamoDBCrudPolicy:
+            TableName: !Ref CategoriesTable
+
+  # ─── Unit 3: Idea Functions ──────────────────────────────────────────────
+
+  CreateDraftFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ideation-portal-create-draft-${Environment}
+      Handler: src/ideas/createDraft.handler
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /ideas/draft
+            Method: POST
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - DynamoDBCrudPolicy:
+            TableName: !Ref IdeasTable
+
+  UpdateDraftFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ideation-portal-update-draft-${Environment}
+      Handler: src/ideas/updateDraft.handler
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /ideas/{id}/draft
+            Method: PUT
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - DynamoDBCrudPolicy:
+            TableName: !Ref IdeasTable
+
+  AutoSaveDraftFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ideation-portal-autosave-draft-${Environment}
+      Handler: src/ideas/autoSaveDraft.handler
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /ideas/{id}/autosave
+            Method: PUT
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - DynamoDBCrudPolicy:
+            TableName: !Ref IdeasTable
+
+  SubmitIdeaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ideation-portal-submit-idea-${Environment}
+      Handler: src/ideas/submitIdea.handler
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /ideas/{id}/submit
+            Method: POST
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - DynamoDBCrudPolicy:
+            TableName: !Ref IdeasTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref CampaignsTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref CategoriesTable
+        - Statement:
+            - Effect: Allow
+              Action: events:PutEvents
+              Resource: !GetAtt IdeationEventBus.Arn
+
+  DeleteDraftFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ideation-portal-delete-draft-${Environment}
+      Handler: src/ideas/deleteDraft.handler
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /ideas/{id}
+            Method: DELETE
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - DynamoDBCrudPolicy:
+            TableName: !Ref IdeasTable
+        - Statement:
+            - Effect: Allow
+              Action: s3:DeleteObject
+              Resource: !Sub ${AttachmentsBucket.Arn}/ideas/*
+
+  ListIdeasFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ideation-portal-list-ideas-${Environment}
+      Handler: src/ideas/listIdeas.handler
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /ideas
+            Method: GET
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - DynamoDBReadPolicy:
+            TableName: !Ref IdeasTable
+
+  GetMyIdeasFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ideation-portal-get-my-ideas-${Environment}
+      Handler: src/ideas/getMyIdeas.handler
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /ideas/mine
+            Method: GET
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - DynamoDBReadPolicy:
+            TableName: !Ref IdeasTable
+
+  GetIdeaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ideation-portal-get-idea-${Environment}
+      Handler: src/ideas/getIdea.handler
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /ideas/{id}
+            Method: GET
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - DynamoDBReadPolicy:
+            TableName: !Ref IdeasTable
+
+  GetUploadUrlFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ideation-portal-get-upload-url-${Environment}
+      Handler: src/ideas/getUploadUrl.handler
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /ideas/{id}/upload-url
+            Method: POST
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - DynamoDBReadPolicy:
+            TableName: !Ref IdeasTable
+        - Statement:
+            - Effect: Allow
+              Action: s3:PutObject
+              Resource: !Sub ${AttachmentsBucket.Arn}/ideas/*
+
+  # ─── Evaluation Functions ──────────────────────────────────────────────────
+
+  GetIdeasForEvaluationFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ideation-portal-get-ideas-for-evaluation-${Environment}
+      Handler: src/evaluations/getIdeasForEvaluation.handler
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /evaluations/ideas
+            Method: GET
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - DynamoDBReadPolicy:
+            TableName: !Ref IdeasTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref EvaluationsTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref CampaignsTable
+
+  GetPendingEvaluationsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ideation-portal-get-pending-evaluations-${Environment}
+      Handler: src/evaluations/getPendingEvaluations.handler
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /evaluations/pending
+            Method: GET
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - DynamoDBReadPolicy:
+            TableName: !Ref IdeasTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref EvaluationsTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref CampaignsTable
+
+  GetMyEvaluationFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ideation-portal-get-my-evaluation-${Environment}
+      Handler: src/evaluations/getMyEvaluation.handler
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /evaluations/{ideaId}/mine
+            Method: GET
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - DynamoDBReadPolicy:
+            TableName: !Ref EvaluationsTable
+
+  SaveEvaluationProgressFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ideation-portal-save-evaluation-progress-${Environment}
+      Handler: src/evaluations/saveEvaluationProgress.handler
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /evaluations/{ideaId}/progress
+            Method: PUT
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - DynamoDBCrudPolicy:
+            TableName: !Ref EvaluationsTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref IdeasTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref CampaignsTable
+
+  SubmitEvaluationFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ideation-portal-submit-evaluation-${Environment}
+      Handler: src/evaluations/submitEvaluation.handler
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /evaluations/{ideaId}/submit
+            Method: POST
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - DynamoDBCrudPolicy:
+            TableName: !Ref EvaluationsTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref AggregatedScoresTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref IdeasTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref CampaignsTable
+        - Statement:
+            - Effect: Allow
+              Action: events:PutEvents
+              Resource: !GetAtt IdeationEventBus.Arn
+
+  GetEvaluationSummaryFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ideation-portal-get-evaluation-summary-${Environment}
+      Handler: src/evaluations/getEvaluationSummary.handler
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /evaluations/{ideaId}/summary
+            Method: GET
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - DynamoDBReadPolicy:
+            TableName: !Ref AggregatedScoresTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref EvaluationsTable
+
+  GetAggregatedScoreFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ideation-portal-get-aggregated-score-${Environment}
+      Handler: src/evaluations/getAggregatedScore.handler
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /evaluations/{ideaId}/score
+            Method: GET
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - DynamoDBReadPolicy:
+            TableName: !Ref AggregatedScoresTable
+
+  # ─── Dashboard Functions (Unit 5) ──────────────────────────────────────────
+
+  GetLeaderboardFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ideation-portal-get-leaderboard-${Environment}
+      Handler: src/dashboard/getLeaderboard.handler
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /dashboard/leaderboard
+            Method: GET
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - DynamoDBReadPolicy:
+            TableName: !Ref AggregatedScoresTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref IdeasTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref UsersTable
+
+  GetIdeaDetailDashboardFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ideation-portal-get-idea-detail-dashboard-${Environment}
+      Handler: src/dashboard/getIdeaDetail.handler
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /dashboard/ideas/{ideaId}
+            Method: GET
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - DynamoDBReadPolicy:
+            TableName: !Ref IdeasTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref AggregatedScoresTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref UsersTable
+
+  GetLeaderboardSummaryFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ideation-portal-get-leaderboard-summary-${Environment}
+      Handler: src/dashboard/getLeaderboardSummary.handler
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /dashboard/summary
+            Method: GET
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - DynamoDBReadPolicy:
+            TableName: !Ref AggregatedScoresTable
+
+  SearchIdeasFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ideation-portal-search-ideas-${Environment}
+      Handler: src/dashboard/searchIdeas.handler
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /dashboard/search
+            Method: GET
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - DynamoDBReadPolicy:
+            TableName: !Ref IdeasTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref AggregatedScoresTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref UsersTable
+
+  # ─── Analytics Functions (Unit 5) ──────────────────────────────────────────
+
+  GetTopIdeasFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ideation-portal-get-top-ideas-${Environment}
+      Handler: src/analytics/getTopIdeas.handler
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /analytics/top-ideas
+            Method: GET
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - DynamoDBReadPolicy:
+            TableName: !Ref AggregatedScoresTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref IdeasTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref UsersTable
+
+  GetComparativeAnalysisFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ideation-portal-get-comparative-analysis-${Environment}
+      Handler: src/analytics/getComparativeAnalysis.handler
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /analytics/comparative
+            Method: GET
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - DynamoDBReadPolicy:
+            TableName: !Ref AggregatedScoresTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref IdeasTable
+
+  GetParticipationMetricsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ideation-portal-get-participation-metrics-${Environment}
+      Handler: src/analytics/getParticipationMetrics.handler
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /analytics/participation
+            Method: GET
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - DynamoDBReadPolicy:
+            TableName: !Ref IdeasTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref AggregatedScoresTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref CampaignsTable
+
+  GetScoreDistributionFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ideation-portal-get-score-distribution-${Environment}
+      Handler: src/analytics/getScoreDistribution.handler
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /analytics/score-distribution
+            Method: GET
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - DynamoDBReadPolicy:
+            TableName: !Ref AggregatedScoresTable
+
+  GetCampaignSummaryFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ideation-portal-get-campaign-summary-${Environment}
+      Handler: src/analytics/getCampaignSummary.handler
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /analytics/campaign-summary
+            Method: GET
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - DynamoDBReadPolicy:
+            TableName: !Ref CampaignsTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref AggregatedScoresTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref IdeasTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref UsersTable
+
+  # ─── Notification Functions (Unit 6) ────────────────────────────────────────
+
+  GetNotificationsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ideation-portal-get-notifications-${Environment}
+      Handler: src/notifications/getNotifications.handler
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /notifications
+            Method: GET
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - DynamoDBReadPolicy:
+            TableName: !Ref NotificationsTable
+
+  GetUnreadCountFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ideation-portal-get-unread-count-${Environment}
+      Handler: src/notifications/getUnreadCount.handler
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /notifications/unread-count
+            Method: GET
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - DynamoDBReadPolicy:
+            TableName: !Ref NotificationsTable
+
+  MarkAsReadFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ideation-portal-mark-as-read-${Environment}
+      Handler: src/notifications/markAsRead.handler
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /notifications/{notificationId}/read
+            Method: PUT
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - DynamoDBCrudPolicy:
+            TableName: !Ref NotificationsTable
+
+  MarkAllAsReadFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ideation-portal-mark-all-as-read-${Environment}
+      Handler: src/notifications/markAllAsRead.handler
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /notifications/read-all
+            Method: PUT
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - DynamoDBCrudPolicy:
+            TableName: !Ref NotificationsTable
+
+  NotificationEventConsumerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ideation-portal-notification-consumer-${Environment}
+      Handler: src/notifications/processEvent.handler
+      Timeout: 60
+      Events:
+        IdeaSubmitted:
+          Type: EventBridgeRule
+          Properties:
+            EventBusName: !Ref IdeationEventBus
+            Pattern:
+              detail-type: [idea.submitted]
+        CampaignActivated:
+          Type: EventBridgeRule
+          Properties:
+            EventBusName: !Ref IdeationEventBus
+            Pattern:
+              detail-type: [campaign.activated]
+        CampaignEvalStarted:
+          Type: EventBridgeRule
+          Properties:
+            EventBusName: !Ref IdeationEventBus
+            Pattern:
+              detail-type: [campaign.evaluation-started]
+        CampaignClosed:
+          Type: EventBridgeRule
+          Properties:
+            EventBusName: !Ref IdeationEventBus
+            Pattern:
+              detail-type: [campaign.closed]
+        EvalAggregationComplete:
+          Type: EventBridgeRule
+          Properties:
+            EventBusName: !Ref IdeationEventBus
+            Pattern:
+              detail-type: [evaluation.aggregation-complete]
+        WinnersAnnounced:
+          Type: EventBridgeRule
+          Properties:
+            EventBusName: !Ref IdeationEventBus
+            Pattern:
+              detail-type: [recognition.winners-announced]
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - DynamoDBCrudPolicy:
+            TableName: !Ref NotificationsTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref IdeasTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref CampaignsTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref UsersTable
+
+  # ─── Unit 7: Recognition System ────────────────────────────────────────────
+
+  ProcessWinnersFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/recognition/processWinners.handler
+      Timeout: 30
+      Events:
+        CampaignClosed:
+          Type: EventBridgeRule
+          Properties:
+            EventBusName: !Ref IdeationEventBus
+            Pattern:
+              detail-type: [campaign.closed]
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - DynamoDBReadPolicy:
+            TableName: !Ref AggregatedScoresTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref WinnersTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref IdeasTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref UsersTable
+
+  GetWinnersFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/recognition/getWinners.handler
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /recognition/{campaignId}/winners
+            Method: GET
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - DynamoDBReadPolicy:
+            TableName: !Ref WinnersTable
+
+  GetAnnouncementFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/recognition/getAnnouncement.handler
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /recognition/{campaignId}/announcement
+            Method: GET
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - DynamoDBReadPolicy:
+            TableName: !Ref WinnersTable
+
+  AnnounceWinnersFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/recognition/announceWinners.handler
+      Timeout: 30
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /recognition/{campaignId}/announce
+            Method: POST
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - DynamoDBCrudPolicy:
+            TableName: !Ref WinnersTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref CampaignsTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref IdeasTable
+        - Statement:
+            - Effect: Allow
+              Action: events:PutEvents
+              Resource: !GetAtt IdeationEventBus.Arn
+
+  # ─── DynamoDB Tables ───────────────────────────────────────────────────────
+
+  UsersTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub ideation-portal-users-${Environment}
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - { AttributeName: userId, AttributeType: S }
+        - { AttributeName: email, AttributeType: S }
+        - { AttributeName: role, AttributeType: S }
+      KeySchema:
+        - { AttributeName: userId, KeyType: HASH }
+      GlobalSecondaryIndexes:
+        - IndexName: email-index
+          KeySchema: [{ AttributeName: email, KeyType: HASH }]
+          Projection: { ProjectionType: ALL }
+        - IndexName: role-index
+          KeySchema: [{ AttributeName: role, KeyType: HASH }]
+          Projection: { ProjectionType: ALL }
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
+
+  CampaignsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub ideation-portal-campaigns-${Environment}
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - { AttributeName: campaignId, AttributeType: S }
+        - { AttributeName: status, AttributeType: S }
+        - { AttributeName: createdAt, AttributeType: S }
+      KeySchema:
+        - { AttributeName: campaignId, KeyType: HASH }
+      GlobalSecondaryIndexes:
+        - IndexName: status-createdAt-index
+          KeySchema:
+            - { AttributeName: status, KeyType: HASH }
+            - { AttributeName: createdAt, KeyType: RANGE }
+          Projection: { ProjectionType: ALL }
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
+
+  CategoriesTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub ideation-portal-categories-${Environment}
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - { AttributeName: categoryId, AttributeType: S }
+        - { AttributeName: isActive, AttributeType: S }
+        - { AttributeName: name, AttributeType: S }
+      KeySchema:
+        - { AttributeName: categoryId, KeyType: HASH }
+      GlobalSecondaryIndexes:
+        - IndexName: isActive-name-index
+          KeySchema:
+            - { AttributeName: isActive, KeyType: HASH }
+            - { AttributeName: name, KeyType: RANGE }
+          Projection: { ProjectionType: ALL }
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
+
+  IdeasTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub ideation-portal-ideas-${Environment}
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - { AttributeName: ideaId, AttributeType: S }
+        - { AttributeName: submitterId, AttributeType: S }
+        - { AttributeName: campaignId, AttributeType: S }
+        - { AttributeName: status, AttributeType: S }
+      KeySchema:
+        - { AttributeName: ideaId, KeyType: HASH }
+      GlobalSecondaryIndexes:
+        - IndexName: submitterId-index
+          KeySchema: [{ AttributeName: submitterId, KeyType: HASH }]
+          Projection: { ProjectionType: ALL }
+        - IndexName: campaignId-status-index
+          KeySchema:
+            - { AttributeName: campaignId, KeyType: HASH }
+            - { AttributeName: status, KeyType: RANGE }
+          Projection: { ProjectionType: ALL }
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
+
+  EvaluationsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub ideation-portal-evaluations-${Environment}
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - { AttributeName: ideaId, AttributeType: S }
+        - { AttributeName: panelMemberId, AttributeType: S }
+      KeySchema:
+        - { AttributeName: ideaId, KeyType: HASH }
+        - { AttributeName: panelMemberId, KeyType: RANGE }
+      GlobalSecondaryIndexes:
+        - IndexName: panelMemberId-index
+          KeySchema: [{ AttributeName: panelMemberId, KeyType: HASH }]
+          Projection: { ProjectionType: ALL }
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
+
+  AggregatedScoresTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub ideation-portal-aggregated-scores-${Environment}
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - { AttributeName: ideaId, AttributeType: S }
+        - { AttributeName: campaignId, AttributeType: S }
+        - { AttributeName: compositeScore, AttributeType: N }
+      KeySchema:
+        - { AttributeName: ideaId, KeyType: HASH }
+      GlobalSecondaryIndexes:
+        - IndexName: campaignId-compositeScore-index
+          KeySchema:
+            - { AttributeName: campaignId, KeyType: HASH }
+            - { AttributeName: compositeScore, KeyType: RANGE }
+          Projection: { ProjectionType: ALL }
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
+
+  NotificationsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub ideation-portal-notifications-${Environment}
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - { AttributeName: userId, AttributeType: S }
+        - { AttributeName: notificationId, AttributeType: S }
+        - { AttributeName: createdAt, AttributeType: S }
+      KeySchema:
+        - { AttributeName: userId, KeyType: HASH }
+        - { AttributeName: notificationId, KeyType: RANGE }
+      LocalSecondaryIndexes:
+        - IndexName: userId-createdAt-index
+          KeySchema:
+            - { AttributeName: userId, KeyType: HASH }
+            - { AttributeName: createdAt, KeyType: RANGE }
+          Projection: { ProjectionType: ALL }
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
+
+  WinnersTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub ideation-portal-winners-${Environment}
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - { AttributeName: campaignId, AttributeType: S }
+        - { AttributeName: rank, AttributeType: N }
+      KeySchema:
+        - { AttributeName: campaignId, KeyType: HASH }
+        - { AttributeName: rank, KeyType: RANGE }
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
+
+  # ─── EventBridge ───────────────────────────────────────────────────────────
+
+  IdeationEventBus:
+    Type: AWS::Events::EventBus
+    Properties:
+      Name: !Sub ideation-portal-events-${Environment}
+
+  # ─── S3 ────────────────────────────────────────────────────────────────────
+
+  AttachmentsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub ideation-portal-attachments-${Environment}-${AWS::AccountId}
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      CorsConfiguration:
+        CorsRules:
+          - AllowedOrigins: ['*']
+            AllowedMethods: [PUT, GET]
+            AllowedHeaders: ['*']
+            MaxAge: 3600
+      LifecycleConfiguration:
+        Rules:
+          - Id: DeleteIncompleteMultipartUploads
+            Status: Enabled
+            AbortIncompleteMultipartUpload:
+              DaysAfterInitiation: 1
+
+  FrontendBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub ideation-portal-frontend-${Environment}-${AWS::AccountId}
+
+  FrontendBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref FrontendBucket
+      PolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: cloudfront.amazonaws.com
+            Action: s3:GetObject
+            Resource: !Sub ${FrontendBucket.Arn}/*
+            Condition:
+              StringEquals:
+                AWS:SourceArn: !Sub arn:aws:cloudfront::${AWS::AccountId}:distribution/${FrontendDistribution}
+
+  # ─── CloudFront ────────────────────────────────────────────────────────────
+
+  CloudFrontOAC:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Name: !Sub ideation-portal-oac-${Environment}
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
+
+  FrontendDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Origins:
+          - Id: FrontendS3Origin
+            DomainName: !GetAtt FrontendBucket.RegionalDomainName
+            OriginAccessControlId: !GetAtt CloudFrontOAC.Id
+            S3OriginConfig:
+              OriginAccessIdentity: ''
+        DefaultCacheBehavior:
+          TargetOriginId: FrontendS3Origin
+          ViewerProtocolPolicy: redirect-to-https
+          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6
+          AllowedMethods: [GET, HEAD, OPTIONS]
+        DefaultRootObject: index.html
+        CustomErrorResponses:
+          - ErrorCode: 403
+            ResponseCode: 200
+            ResponsePagePath: /index.html
+          - ErrorCode: 404
+            ResponseCode: 200
+            ResponsePagePath: /index.html
+        Enabled: true
+        HttpVersion: http2
+        PriceClass: PriceClass_100
+
+Outputs:
+  ApiUrl:
+    Description: API Gateway endpoint URL
+    Value: !Sub https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}
+    Export:
+      Name: !Sub ${AWS::StackName}-ApiUrl
+
+  UserPoolId:
+    Description: Cognito User Pool ID
+    Value: !Ref CognitoUserPool
+    Export:
+      Name: !Sub ${AWS::StackName}-UserPoolId
+
+  UserPoolClientId:
+    Description: Cognito App Client ID
+    Value: !Ref CognitoUserPoolClient
+    Export:
+      Name: !Sub ${AWS::StackName}-UserPoolClientId
+
+  FrontendUrl:
+    Description: CloudFront distribution URL
+    Value: !Sub https://${FrontendDistribution.DomainName}
+    Export:
+      Name: !Sub ${AWS::StackName}-FrontendUrl
+
+  AttachmentsBucketName:
+    Description: S3 bucket for idea attachments
+    Value: !Ref AttachmentsBucket
+    Export:
+      Name: !Sub ${AWS::StackName}-AttachmentsBucket
+
+  FrontendBucketName:
+    Description: S3 bucket for frontend assets
+    Value: !Ref FrontendBucket
+    Export:
+      Name: !Sub ${AWS::StackName}-FrontendBucket
+
+  EventBusName:
+    Description: EventBridge custom bus name
+    Value: !Ref IdeationEventBus
+    Export:
+      Name: !Sub ${AWS::StackName}-EventBusName

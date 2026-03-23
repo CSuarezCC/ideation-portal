@@ -1,0 +1,56 @@
+import type { ErrorCode } from '../types/index.js'
+
+const STATUS_MAP: Record<ErrorCode, number> = {
+  VALIDATION_ERROR: 400,
+  INVALID_CREDENTIALS: 401,
+  TOKEN_EXPIRED: 401,
+  ACCOUNT_NOT_CONFIRMED: 403,
+  ACCOUNT_DISABLED: 403,
+  FORBIDDEN: 403,
+  USER_NOT_FOUND: 404,
+  EMAIL_ALREADY_EXISTS: 409,
+  CAMPAIGN_NOT_FOUND: 404,
+  CAMPAIGN_NOT_DRAFT: 400,
+  CAMPAIGN_INVALID_TRANSITION: 400,
+  CAMPAIGN_ALREADY_ACTIVE: 409,
+  CAMPAIGN_NO_PANEL_MEMBERS: 400,
+  CATEGORY_NOT_FOUND: 404,
+  CATEGORY_NAME_EXISTS: 409,
+  INVALID_PANEL_MEMBER: 400,
+  IDEA_NOT_FOUND: 404,
+  IDEA_NOT_DRAFT: 400,
+  IDEA_NOT_OWNER: 403,
+  IDEA_VALIDATION_ERROR: 400,
+  NO_ACTIVE_CAMPAIGN: 400,
+  ATTACHMENT_LIMIT_EXCEEDED: 400,
+  FILE_TOO_LARGE: 400,
+  EVALUATION_NOT_FOUND: 404,
+  EVALUATION_ALREADY_SUBMITTED: 409,
+  EVALUATION_VALIDATION_ERROR: 400,
+  NOT_PANEL_MEMBER: 403,
+  CAMPAIGN_NOT_IN_EVALUATION: 400,
+  ANALYTICS_ACCESS_DENIED: 403,
+  INVALID_DIMENSION: 400,
+  INVALID_LIMIT: 400,
+  NOTIFICATION_NOT_FOUND: 404,
+  RECOGNITION_NOT_FOUND: 404,
+  CAMPAIGN_NOT_CLOSED: 400,
+  ALREADY_ANNOUNCED: 409,
+  INTERNAL_ERROR: 500,
+}
+
+export function errorResponse(code: ErrorCode, message: string) {
+  return {
+    statusCode: STATUS_MAP[code] ?? 500,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ error: message, code }),
+  }
+}
+
+export function successResponse(body: unknown, statusCode = 200) {
+  return {
+    statusCode,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  }
+}
